@@ -23,8 +23,8 @@ async function run() {
 
             const hexKeyRot1 = await vctrApi.getRotation("HexKey2");
             const hexKeyRot2 = await vctrApi.getRotation("HexKey1");
-            const newHexKeyRot1 = [hexKeyRot1[0] + 560, hexKeyRot1[1], hexKeyRot1[2]];
-            const newHexKeyRot2 = [hexKeyRot2[0] + 560, hexKeyRot2[1], hexKeyRot2[2]];
+            const newHexKeyRot1 = [hexKeyRot1[0] - 560, hexKeyRot1[1], hexKeyRot1[2]];
+            const newHexKeyRot2 = [hexKeyRot2[0] - 560, hexKeyRot2[1], hexKeyRot2[2]];
 
             const screwRightPos = await vctrApi.getPosition("screwRight");
             const screwLeftPos = await vctrApi.getPosition("screwLeft");
@@ -75,7 +75,7 @@ async function run() {
                     animate(1000, timeFraction => {
                         return Math.pow(timeFraction, 2);
                     }, (timeFraction) => {
-                        const position = lerp(newTrayPos, [newTrayPos[0], newTrayPos[1], newTrayPos[2] + 72], timeFraction);
+                        const position = lerp(newTrayPos, [newTrayPos[0], newTrayPos[1], newTrayPos[2] - 72], timeFraction);
                         vctrApi.setPositionAbsolute("w-tray_2", position);
                     });
                 }, keyFrames[2]);
@@ -83,7 +83,7 @@ async function run() {
                     animate(2000, timeFraction => {
                         return Math.pow(timeFraction, 2);
                     }, (timeFraction) => {
-                        const position = lerp([newTrayPos[0], newTrayPos[1], newTrayPos[2] + 72], [newTrayPos[0], trayPos[1] + 70, newTrayPos[2] + 72], timeFraction);
+                        const position = lerp([newTrayPos[0], newTrayPos[1], newTrayPos[2] - 72], [newTrayPos[0], trayPos[1], newTrayPos[2] - 72], timeFraction);
                         vctrApi.setPositionAbsolute("w-tray_2", position);
                     });
                 }, keyFrames[3]);
