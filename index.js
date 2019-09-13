@@ -67,12 +67,49 @@ async function run() {
 
             const keyFrames = [1000, 2000, 5000, 6000, 8000, 10000];
 
+            const constructMovables = (objects, positions) => {
+                return new Promise((resolve, reject) => {
+                    const movables = new Map();
+                    objects.forEach((obj, i) => {
+                        movables.set(obj, positions[i]);
+                    });
+                    resolve(movables);
+                });
+            }
+            
+            const interpolatePosition = (movables, timeFraction) => {
+                movables.forEach(async (newPos, object) => {
+                    const currentPos = await vctrApi.getPosition(object);
+                    vctrApi.setPositionAbsolute(object, lerp(currentPos, newPos, timeFraction));        
+                });
+            }
+
+            const interpolateRotation = (movables, timeFraction) => {
+                movables.forEach(async (newRot, object) => {
+                    const currentRot = await vctrApi.getRotation(object);
+                    vctrApi.setRotationAbsolute(object, lerp(currentRot, newRot, timeFraction));        
+                });
+            }
+
+            const sequenceAnimate = (duration, keyFrame, movables) => {
+                setTimeout(() => {
+                    animate(duration, timeFraction => {
+                        return timeFraction*(2-timeFraction);
+                    }, (timeFraction) => {
+                        interpolatePosition(movables, timeFraction);
+                    });
+                }, keyFrame);
+            }
+
             document.getElementById("animateButton").addEventListener("click", async () => {
                 if (!animationPlaying) {
                     animationPlaying = true;
+
                     vctrApi.switchView("ZoomView");
+
                     await vctrApi.setVisibility("HexKey1", true, false);
                     await vctrApi.setVisibility("HexKey2", true, false);
+
                     animate(1000, timeFraction => {
                         return Math.pow(timeFraction, 2);
                     }, (timeFraction) => {
@@ -81,60 +118,111 @@ async function run() {
                         vctrApi.setPositionAbsolute("HexKey2", position1);
                         vctrApi.setPositionAbsolute("HexKey1", position2);
                     });
+
+                    const sequence1Objects = [
+                        "screwRight",
+                        "screwLeft"
+                    ];
+
+                    const sequence1NewPositions = [
+                        newScrewRightPos,
+                        newScrewLeftPos
+                    ];
+
+                    const sequence1Movables = await constructMovables(sequence1Objects, sequence1NewPositions);
+
+                    const sequence1RotObjects = [
+                        "HexKey2",
+                        "HexKey1"
+                    ];
+
+                    const sequence1NewRotations = [
+                        newHexKeyRot1,
+                        newHexKeyRot2
+                    ];
+
+                    const sequence1RotationMovables = await constructMovables(sequence1RotObjects, sequence1NewRotations);
+
                     setTimeout(() => {
                         animate(1000, timeFraction => {
                             return Math.pow(timeFraction, 2);
                         }, (timeFraction) => {
-                            const rotation1 = lerp(hexKeyRot1, newHexKeyRot1, timeFraction);
-                            const rotation2 = lerp(hexKeyRot2, newHexKeyRot2, timeFraction);
-                            vctrApi.setRotationAbsolute("HexKey2", rotation1);
-                            vctrApi.setRotationAbsolute("HexKey1", rotation2);
+                            interpolateRotation(sequence1RotationMovables, timeFraction);
 
-                            const position1 = lerp(screwRightPos, newScrewRightPos, timeFraction);
-                            const position2 = lerp(screwLeftPos, newScrewLeftPos, timeFraction);
-                            vctrApi.setPositionAbsolute("screwRight", position1);
-                            vctrApi.setPositionAbsolute("screwLeft", position2);
+                            interpolatePosition(sequence1Movables, timeFraction);
                         });
                     }, keyFrames[0]);
-                    setTimeout(() => {
-                        animate(2000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position = lerp(trayPos, newTrayPos, timeFraction);
-                            vctrApi.setPositionAbsolute("w-tray_2", position);
-                        });
-                    }, keyFrames[1]);
-                    setTimeout(() => {
-                        animate(1000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position = lerp(newTrayPos, [newTrayPos[0], newTrayPos[1], newTrayPos[2] - 72], timeFraction);
-                            vctrApi.setPositionAbsolute("w-tray_2", position);
-                        });
-                    }, keyFrames[2]);
-                    setTimeout(() => {
-                        animate(2000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position = lerp([newTrayPos[0], newTrayPos[1], newTrayPos[2] - 72], [newTrayPos[0], trayPos[1], newTrayPos[2] - 72], timeFraction);
-                            vctrApi.setPositionAbsolute("w-tray_2", position);
-                        });
-                    }, keyFrames[3]);
-                    setTimeout(() => {
-                        animate(2000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const rotation1 = lerp(newHexKeyRot1, hexKeyRot1, timeFraction);
-                            const rotation2 = lerp(newHexKeyRot2, hexKeyRot2, timeFraction);
-                            vctrApi.setRotationAbsolute("HexKey2", rotation1);
-                            vctrApi.setRotationAbsolute("HexKey1", rotation2);
 
-                            const position1 = lerp(newScrewRightPos, screwRightPos, timeFraction);
-                            const position2 = lerp(newScrewLeftPos, screwLeftPos, timeFraction);
-                            vctrApi.setPositionAbsolute("screwRight", position1);
-                            vctrApi.setPositionAbsolute("screwLeft", position2);
+                    const sequence2Objects = [
+                        "w-tray_2"
+                    ];
+
+                    const sequence2NewPositions = [
+                        newTrayPos
+                    ];
+
+                    const sequence2Movables = await constructMovables(sequence2Objects, sequence2NewPositions);
+
+                    sequenceAnimate(2000, keyFrames[1], sequence2Movables);
+
+                    const sequence3Objects = [
+                        "w-tray_2"
+                    ];
+
+                    const sequence3NewPositions = [
+                        [newTrayPos[0], newTrayPos[1], newTrayPos[2] - 72]
+                    ];
+
+                    const sequence3Movables = await constructMovables(sequence3Objects, sequence3NewPositions);
+
+                    sequenceAnimate(1000, keyFrames[2], sequence3Movables);
+
+                    const sequence4Objects = [
+                        "w-tray_2"
+                    ];
+
+                    const sequence4NewPositions = [
+                        [newTrayPos[0], trayPos[1], newTrayPos[2] - 72]
+                    ];
+
+                    const sequence4Movables = await constructMovables(sequence4Objects, sequence4NewPositions);
+
+                    sequenceAnimate(2000, keyFrames[3], sequence4Movables);
+
+                    const sequence5Objects = [
+                        "screwRight",
+                        "screwLeft"
+                    ];
+
+                    const sequence5NewPositions = [
+                        screwRightPos,
+                        screwLeftPos
+                    ];
+
+                    const sequence5Movables = await constructMovables(sequence5Objects, sequence5NewPositions);
+
+                    const sequence5RotObjects = [
+                        "HexKey2",
+                        "HexKey1"
+                    ];
+
+                    const sequence5NewRotations = [
+                        hexKeyRot1,
+                        hexKeyRot2
+                    ];
+
+                    const sequence5RotationMovables = await constructMovables(sequence5RotObjects, sequence5NewRotations);
+
+                    setTimeout(() => {
+                        animate(2000, timeFraction => {
+                            return Math.pow(timeFraction, 2);
+                        }, (timeFraction) => {
+                            interpolateRotation(sequence5RotationMovables, timeFraction);
+
+                            interpolatePosition(sequence5Movables, timeFraction);
                         });
                     }, keyFrames[4]);
+                    
                     setTimeout(() => {
                         vctrApi.setVisibility("HexKey1", false, false);
                         vctrApi.setVisibility("HexKey2", false, false);
@@ -150,104 +238,119 @@ async function run() {
                     vctrApi.setVisibility("Shadow_Plane_1", false, false);
 
                     vctrApi.switchView("ZoomOutView");
+
+                    const sequence1Objects = [
+                        "screws_left",
+                        "screws_right",
+                        "Left",
+                        "Right",
+                        "plastic",
+                        "w-lean_1",
+                        "w-lean_2",
+                        "w-tray_1",
+                        "w-tray_2",
+                        "w-base_2",
+                        "rod_1",
+                        "rod_2"
+                    ];
+
+                    const sequence1NewPositions = [
+                        newScrewsLeftPos,
+                        newScrewsRightPos,
+                        newLeftLegPos,
+                        newRightLegPos,
+                        newPlasticPos,
+                        newElem1Pos,
+                        newElem2Pos,
+                        newElem3Pos,
+                        newElem4Pos,
+                        newElem5Pos,
+                        newRod1Pos,
+                        newRod2Pos
+                    ];
+
+                    const sequence1Movables = await constructMovables(sequence1Objects, sequence1NewPositions);
+
+                    sequenceAnimate(1000, keyFrames[0], sequence1Movables);
+
+                    const sequence2Objects = [
+                        "Left",
+                        "Right",
+                        "w-base_2",
+                    ];
+
+                    const sequence2NewPositions = [
+                        leftLegPos,
+                        rightLegPos,
+                        elem5Pos
+                    ];
+
+                    const sequence2Movables = await constructMovables(sequence2Objects, sequence2NewPositions);
+
+                    sequenceAnimate(1000, keyFrames[1], sequence2Movables);
+
+                    const sequence3Objects = [
+                        "rod_1",
+                        "rod_2",
+                    ];
+
+                    const sequence3NewPositions = [
+                        rod1Pos,
+                        rod2Pos,
+                    ];
+
+                    const sequence3Movables = await constructMovables(sequence3Objects, sequence3NewPositions);
+
+                    sequenceAnimate(1000, keyFrames[2], sequence3Movables);
+
+                    const sequence4Objects = [
+                        "w-lean_1",
+                        "w-lean_2",
+                    ];
+
+                    const sequence4NewPositions = [
+                        elem1Pos,
+                        elem2Pos,
+                    ];
+
+                    const sequence4Movables = await constructMovables(sequence4Objects, sequence4NewPositions);
+
+                    sequenceAnimate(1000, keyFrames[3], sequence4Movables);
+
+                    const sequence5Objects = [
+                        "w-tray_1",
+                        "w-tray_2",
+                        "plastic"
+                    ];
+
+                    const sequence5NewPositions = [
+                        elem3Pos,
+                        elem4Pos,
+                        plasticPos
+                    ];
+
+                    const sequence5Movables = await constructMovables(sequence5Objects, sequence5NewPositions);
+
+                    sequenceAnimate(2000, keyFrames[4], sequence5Movables);
+
+                    const sequence6Objects = [
+                        "screws_left",
+                        "screws_right"
+                    ];
+
+                    const sequence6NewPositions = [
+                        screwsLeftPos,
+                        screwsRightPos
+                    ];
+
+                    const sequence6Movables = await constructMovables(sequence6Objects, sequence6NewPositions);
+
+                    sequenceAnimate(2000, keyFrames[5], sequence6Movables);
+
                     setTimeout(() => {
-                        animate(1000, timeFraction => {
-                            return timeFraction*(2-timeFraction);
-                        }, (timeFraction) => {
-                            const position1 = lerp(screwsLeftPos, newScrewsLeftPos, timeFraction);
-                            const position2 = lerp(screwsRightPos, newScrewsRightPos, timeFraction);
-                            vctrApi.setPositionAbsolute("screws_left", position1);
-                            vctrApi.setPositionAbsolute("screws_right", position2);
-
-                            const position3 = lerp(leftLegPos, newLeftLegPos, timeFraction);
-                            const position4 = lerp(rightLegPos, newRightLegPos, timeFraction);
-                            vctrApi.setPositionAbsolute("Left", position3);
-                            vctrApi.setPositionAbsolute("Right", position4);
-
-                            const position5 = lerp(plasticPos, newPlasticPos, timeFraction);
-                            vctrApi.setPositionAbsolute("plastic", position5);
-
-                            const position6 = lerp(elem1Pos, newElem1Pos, timeFraction);
-                            const position7 = lerp(elem2Pos, newElem2Pos, timeFraction);
-                            const position8 = lerp(elem3Pos, newElem3Pos, timeFraction);
-                            const position9 = lerp(elem4Pos, newElem4Pos, timeFraction);
-                            const position10 = lerp(elem5Pos, newElem5Pos, timeFraction);
-                            vctrApi.setPositionAbsolute("w-lean_1", position6);
-                            vctrApi.setPositionAbsolute("w-lean_2", position7);
-                            vctrApi.setPositionAbsolute("w-tray_1", position8);
-                            vctrApi.setPositionAbsolute("w-tray_2", position9);
-                            vctrApi.setPositionAbsolute("w-base_2", position10);
-
-                            const position11 = lerp(rod1Pos, newRod1Pos, timeFraction);
-                            const position12 = lerp(rod2Pos, newRod2Pos, timeFraction);
-                            vctrApi.setPositionAbsolute("rod_1", position11);
-                            vctrApi.setPositionAbsolute("rod_2", position12);
-                        });
-                    }, keyFrames[0]);
-
-                    setTimeout(() => {
-                        animate(1000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position1 = lerp(newLeftLegPos, leftLegPos, timeFraction);
-                            const position2 = lerp(newRightLegPos, rightLegPos, timeFraction);
-                            vctrApi.setPositionAbsolute("Left", position1);
-                            vctrApi.setPositionAbsolute("Right", position2);
-
-                            const position3 = lerp(newElem5Pos, elem5Pos, timeFraction);
-                            vctrApi.setPositionAbsolute("w-base_2", position3);
-                        });
-                    }, keyFrames[1]);
-                    
-                    setTimeout(() => {
-                        animate(1000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position1 = lerp(newRod1Pos, rod1Pos, timeFraction);
-                            const position2 = lerp(newRod2Pos, rod2Pos, timeFraction);
-                            vctrApi.setPositionAbsolute("rod_1", position1);
-                            vctrApi.setPositionAbsolute("rod_2", position2);
-                        });
-                    }, keyFrames[2]);
-
-                    setTimeout(() => {
-                        animate(1000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position1 = lerp(newElem1Pos, elem1Pos, timeFraction);
-                            const position2 = lerp(newElem2Pos, elem2Pos, timeFraction);
-                            vctrApi.setPositionAbsolute("w-lean_1", position1);
-                            vctrApi.setPositionAbsolute("w-lean_2", position2);
-                        });
-                    }, keyFrames[3]);
-
-                    setTimeout(() => {
-                        animate(2000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position1 = lerp(newElem3Pos, elem3Pos, timeFraction);
-                            const position2 = lerp(newElem4Pos, elem4Pos, timeFraction);
-                            const position3 = lerp(newPlasticPos, plasticPos, timeFraction);
-                            vctrApi.setPositionAbsolute("w-tray_1", position1);
-                            vctrApi.setPositionAbsolute("w-tray_2", position2);
-                            vctrApi.setPositionAbsolute("plastic", position3);
-                        });
-                    }, keyFrames[4]);
-
-                    setTimeout(() => {
-                        animate(1000, timeFraction => {
-                            return Math.pow(timeFraction, 2);
-                        }, (timeFraction) => {
-                            const position1 = lerp(newScrewsLeftPos, screwsLeftPos, timeFraction);
-                            const position2 = lerp(newScrewsRightPos, screwsRightPos, timeFraction);
-                            vctrApi.setPositionAbsolute("screws_left", position1);
-                            vctrApi.setPositionAbsolute("screws_right", position2);
-
-                            vctrApi.setVisibility("Shadow_Plane_1", true, false);
-
-                            animationPlaying = false;
-                        });
-                    }, keyFrames[5]);
+                        animationPlaying = false;
+                    }, keyFrames[4] + 1000);
+       
                 }
             });
         } catch (e) {
