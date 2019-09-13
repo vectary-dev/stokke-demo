@@ -105,7 +105,8 @@ async function run() {
                 if (!animationPlaying) {
                     animationPlaying = true;
 
-                    vctrApi.switchView("ZoomView");
+                    // vctrApi.switchView("ZoomView");
+                    vctrApi.zoomView(2);
 
                     await vctrApi.setVisibility("HexKey1", true, false);
                     await vctrApi.setVisibility("HexKey2", true, false);
@@ -237,7 +238,8 @@ async function run() {
 
                     vctrApi.setVisibility("Shadow_Plane_1", false, false);
 
-                    vctrApi.switchView("ZoomOutView");
+                    // vctrApi.switchView("ZoomOutView");
+                    vctrApi.zoomView(0.8);                    
 
                     const sequence1Objects = [
                         "screws_left",
